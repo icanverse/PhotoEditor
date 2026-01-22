@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // OpenCV'nin Java wrapper'ı (İçinde Windows, Linux, Mac native kütüphaneleri gömülüdür)
+    implementation group: 'org.openpnp', name: 'opencv', version: '4.9.0-0'
+
+    // YENİ: Metadata okuyucu (EXIF, GPS, Tarih vs. için)
+    implementation 'com.drewnoakes:metadata-extractor:2.19.0'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
