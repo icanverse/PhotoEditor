@@ -31,12 +31,15 @@ dependencyResolutionManagement {
         maven { url '[https://jitpack.io](https://jitpack.io)' }
     }
 }
+```
 
 **Adım 2: Modül düzeyindeki (app) build.gradle dosyanıza bağımlılığı ekleyin:
 
+```groovy
 dependencies {
     implementation 'com.github.icanverse:PhotoEditor:1.0.1'
 }
+```
 
 Yöntem 2: GitHub Packages ile (Token Gerektirir) 🔒
 Eğer GitHub Packages kullanmayı tercih ederseniz:
@@ -46,6 +49,9 @@ GitHub ayarlarından read:packages yetkisine sahip bir Personal Access Token (Cl
 gradle.properties dosyanıza kullanıcı adınızı ve token'ınızı ekleyin (gpr.usr ve gpr.key).
 
 Proje düzeyindeki build.gradle dosyanıza şu bloğu ekleyin:
+
+
+```groovy
 
 repositories {
     mavenCentral()
@@ -63,6 +69,7 @@ dependencies {
     implementation 'com.github.icanverse:photo-editor:1.0.1'
 }
 
+```
 
 🚀 Kullanım Rehberi
 1. Başlatma
@@ -72,7 +79,7 @@ Sınıfı bir byte[] dizisi ile başlatın. Arka planda LibraryLoader ile gerekl
 Aşağıdaki örnekte ImageProcessor içinde bulunan tüm metodların kullanımını görebilirsiniz. Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsiniz.
 
 Java
-
+```java
 import org.opencv.imgproc.Imgproc; // Font sabitleri için gerekli
 import com.github.icanverse.photoeditor.core.ImageProcessor;
 
@@ -111,7 +118,7 @@ byte[] finalResult = new ImageProcessor(imageBytes)
 
     // --- Sonuç ve Çıktı ---
     .process();                     // Tüm işlemleri uygular ve byte[] çıktı üretir
-
+```
 📄 Lisans
 Bu proje Apache License 2.0 ile lisanslanmıştır. Daha fazla bilgi için LICENSE dosyasına bakabilirsiniz.
 
