@@ -2,8 +2,10 @@ package photoeditor.core;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 import photoeditor.filters.ArtisticFilters;
 import photoeditor.filters.BasicFilters;
+import photoeditor.filters.DecorationFilters;
 import photoeditor.filters.GeometricFilters;
 import photoeditor.utils.ImageUtils;
 import photoeditor.utils.LibraryLoader;
@@ -25,6 +27,10 @@ public class ImageProcessor {
         this.cachedAnalysis = new ImageAnalysis(this.currentImage);
     }
 
+    ///
+    /// >>> BasicFilter
+    ///
+
     public ImageProcessor addBrightness(double value) {
         this.currentImage = BasicFilters.adjustBrightnessContrast(this.currentImage, 1.0, value);
         refreshAnalysis();
@@ -37,6 +43,24 @@ public class ImageProcessor {
         return this;
     }
 
+    public ImageProcessor addExposure(double value) {
+        this.currentImage = BasicFilters.adjustExposure(this.currentImage, value);
+        refreshAnalysis();
+        return this;
+    }
+
+    public ImageProcessor addSharpen(double amount) {
+        this.currentImage = BasicFilters.sharpen(this.currentImage, amount);
+        refreshAnalysis();
+        return this;
+    }
+
+    public ImageProcessor addClarity(double sigma) {
+        this.currentImage = BasicFilters.adjustClarity(this.currentImage, sigma);
+        refreshAnalysis();
+        return this;
+    }
+
     public ImageProcessor addSaturation(double value) {
         this.currentImage = BasicFilters.adjustSaturation(this.currentImage, this.cachedAnalysis, value);
         refreshAnalysis();
@@ -45,9 +69,13 @@ public class ImageProcessor {
 
     public ImageProcessor makeGrayscale() {
         this.currentImage = BasicFilters.toGrayscale(this.currentImage, this.cachedAnalysis);
-        refreshAnalysis(); // Artık kanal bilgisi değişti mi diye kontrol etmek için tazeledik
+        refreshAnalysis();
         return this;
     }
+
+    ///
+    /// >>> GeometricFilter
+    ///
 
     public ImageProcessor rotate(double angle) {
         // Varsayılan olarak beyaz (255, 255, 255) gönderiyoruz
@@ -55,7 +83,6 @@ public class ImageProcessor {
     }
 
     public ImageProcessor rotate(double angle, int r, int g, int b) {
-        // OpenCV Scalar BGR (Blue, Green, Red) bekler! Sıralamaya dikkat.
         Scalar color = new Scalar(b, g, r);
 
         this.currentImage = GeometricFilters.rotate(this.currentImage, angle, color);
@@ -73,26 +100,22 @@ public class ImageProcessor {
 
     public ImageProcessor flipHorizontal() {
         this.currentImage = GeometricFilters.flip(this.currentImage, true, false);
-        // Boyut değişmedi ama yine de tazelemek iyidir
         refreshAnalysis();
         return this;
     }
 
-    // Resmi belirli bir oranda küçült/büyüt (Örn: 0.5)
     public ImageProcessor scale(double factor) {
         this.currentImage = GeometricFilters.scale(this.currentImage, factor);
-        refreshAnalysis(); // Boyut kesinlikle değişti
+        refreshAnalysis();
         return this;
     }
 
-    // Resmi belirli piksel boyutuna getir
     public ImageProcessor resize(int width, int height) {
         this.currentImage = GeometricFilters.resize(this.currentImage, width, height);
         refreshAnalysis();
         return this;
     }
 
-    // Basit Merkezden Kırpma (Instagram karesi gibi)
     public ImageProcessor cropCenterSquare() {
         int minSide = Math.min(this.currentImage.width(), this.currentImage.height());
         int x = (this.currentImage.width() - minSide) / 2;
@@ -103,11 +126,49 @@ public class ImageProcessor {
         return this;
     }
 
-    public ImageProcessor applyPixelate(int pixelSize) {
-        // BasicFilters gibi yeni resim döndürmüyor, mevcut (currentImage) üzerinde değişiklik yapıyor.
-        ArtisticFilters.applyPixelate(this.currentImage, pixelSize);
+    ///
+    /// >>> DecorationFilter
+    ///
 
-        // Resim ciddi oranda değiştiği için analizi tazelemek iyi olur.
+    // Genel Metot
+    public ImageProcessor addText(String text, int x, int y, double scale, int r, int g, int b, int fontFace) {
+        Scalar color = new Scalar(b, g, r);
+        DecorationFilters.addText(this.currentImage, text, x, y, scale, color, 2, fontFace);
+        refreshAnalysis();
+        return this;
+    }
+
+    // Varsayılan Fontlu Metot
+    public ImageProcessor addText(String text, int x, int y, double scale, int r, int g, int b) {
+        return addText(text, x, y, scale, r, g, b, Imgproc.FONT_HERSHEY_DUPLEX);
+    }
+
+    // Ortalanmış Metot
+    public ImageProcessor addWatermark(String text, double scale, int r, int g, int b, int fontFace) {
+        Scalar color = new Scalar(b, g, r);
+        DecorationFilters.addCenteredText(this.currentImage, text, scale, color, 2, fontFace);
+        refreshAnalysis();
+        return this;
+    }
+
+    ///
+    /// >>> ArtisticFilter
+    ///
+
+    public ImageProcessor applyPixelate(int pixelSize) {
+        ArtisticFilters.applyPixelate(this.currentImage, pixelSize);
+        refreshAnalysis();
+        return this;
+    }
+
+    public ImageProcessor applySepia() {
+        ArtisticFilters.applySepia(this.currentImage);
+        refreshAnalysis();
+        return this;
+    }
+
+    public ImageProcessor applyVignette(double intensity) {
+        ArtisticFilters.applyVignette(this.currentImage, intensity);
         refreshAnalysis();
         return this;
     }

@@ -1,19 +1,18 @@
 plugins {
-    id 'java'
+    id 'java-library' // 'java' yerine 'java-library' daha doğrudur
+    id 'maven-publish' // Yayınlamak için şart
 }
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
+group = 'com.github.icanverse' // Github kullanıcı adınla uyumlu olmalı
+version = '1.0.1'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    // OpenCV'nin Java wrapper'ı (İçinde Windows, Linux, Mac native kütüphaneleri gömülüdür)
+    // DİKKAT: Bu kütüphane Android'de sorun çıkarabilir (Açıklamayı oku)
     implementation group: 'org.openpnp', name: 'opencv', version: '4.9.0-0'
-
-    // YENİ: Metadata okuyucu (EXIF, GPS, Tarih vs. için)
     implementation 'com.drewnoakes:metadata-extractor:2.19.0'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
@@ -22,4 +21,54 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+java {
+    withSourcesJar() // Kaynak kodları da pakete ekler (Yazılımcılar içiini görebilsin diye)
+    withJavadocJar() // Dokümantasyonu da ekler
+}
+
+// --- YAYINLAMA AYARLARI ---
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            from components.java // Java bileşenlerini paketle (JAR olarak)
+
+            groupId = 'com.github.icanverse'
+            artifactId = 'photo-editor' // Paket adı
+
+            pom {
+                name = 'PhotoEditor API'
+                description = 'A lightweight, optimized image processing library featuring face beautification and filters.'
+                url = 'https://github.com/icanverse/PhotoEditor'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'icanverse'
+                        name = 'Can'
+                        email = 'caann.mz@gmail.com'
+                    }
+                }
+            }
+
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/icanverse/PhotoEditor")
+            credentials {
+                // local.properties veya Ortam Değişkeninden şifreyi al
+                username = project.findProperty("gpr.usr") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }

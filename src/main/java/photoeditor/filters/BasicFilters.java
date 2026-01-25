@@ -18,6 +18,13 @@ public class BasicFilters {
         return destination;
     }
 
+    /// Pozlama
+    public static Mat adjustExposure(Mat source, double value) {
+        Mat destination = new Mat();
+        source.convertTo(destination, -1, value, 0);
+        return destination;
+    }
+
     /// SB Çevirme ::: Tek Kanallı Görsele Uygulanamaz
     public static Mat toGrayscale(Mat source, ImageAnalysis analysis) {
         if (analysis != null && analysis.getChannels() == 1) {
@@ -49,4 +56,30 @@ public class BasicFilters {
 
         return ColorSpaceConverter.hsvToBgr(workingImage);
     }
+
+    /// Keskinleştirme (Sharpening)
+    public static Mat sharpen(Mat source, double amount) {
+        Mat destination = new Mat();
+        Mat blurred = new Mat();
+
+        // Görseli hafifçe bulanıklaştır (Gürültüyü engellemek için)
+        Imgproc.GaussianBlur(source, blurred, new org.opencv.core.Size(0, 0), 3);
+
+        // Orijinal ve bulanık görüntüyü ağırlıklı olarak birleştir
+        Core.addWeighted(source, 1.0 + amount, blurred, -amount, 0, destination);
+
+        return destination;
+    }
+
+    /// Netlik (Clarity)
+    public static Mat adjustClarity(Mat source, double sigma) {
+        Mat destination = new Mat();
+        Mat detailMask = new Mat();
+
+        Imgproc.GaussianBlur(source, detailMask, new org.opencv.core.Size(0, 0), sigma);
+        Core.addWeighted(source, 1.5, detailMask, -0.5, 0, destination);
+
+        return destination;
+    }
+
 }
