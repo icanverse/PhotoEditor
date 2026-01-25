@@ -16,32 +16,53 @@
 
 ## 📦 Kurulum (Installation)
 
-Kütüphaneyi projenize eklemek için aşağıdaki adımları izleyin.
+Projeye dahil etmek için aşağıdaki iki yöntemden birini seçebilirsiniz. **JitPack (Yöntem 1) en kolay ve hızlı olanıdır.**
 
-### 1. GitHub Token Oluşturma (Gerekli)
-GitHub Packages üzerinden indirme yapabilmek için (GitHub politikası gereği) bir kimlik doğrulama token'ına ihtiyacınız vardır.
+### Yöntem 1: JitPack ile (Önerilen - Token Gerektirmez) 🚀
 
-1. GitHub'da **Settings > Developer Settings > Personal Access Tokens > Tokens (classic)** yolunu izleyin.
-2. **Generate new token (classic)** butonuna basın.
-3. Kapsam (Scope) olarak sadece **`read:packages`** kutucuğunu işaretleyin.
-4. Token'ı kopyalayın.
-
-### 2. Gradle Ayarları
-`build.gradle` (Project level) veya `settings.gradle` dosyanıza şu repoyu ekleyin:
+**Adım 1:** Projenizin kök dizinindeki `settings.gradle` (veya proje düzeyindeki `build.gradle`) dosyasına JitPack deposunu ekleyin:
 
 ```groovy
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url '[https://jitpack.io](https://jitpack.io)' }
+    }
+}
+
+**Adım 2: Modül düzeyindeki (app) build.gradle dosyanıza bağımlılığı ekleyin:
+
+dependencies {
+    implementation 'com.github.icanverse:PhotoEditor:1.0.1'
+}
+
+Yöntem 2: GitHub Packages ile (Token Gerektirir) 🔒
+Eğer GitHub Packages kullanmayı tercih ederseniz:
+
+GitHub ayarlarından read:packages yetkisine sahip bir Personal Access Token (Classic) oluşturun.
+
+gradle.properties dosyanıza kullanıcı adınızı ve token'ınızı ekleyin (gpr.usr ve gpr.key).
+
+Proje düzeyindeki build.gradle dosyanıza şu bloğu ekleyin:
+
 repositories {
     mavenCentral()
     maven {
         name = "GitHubPackages"
         url = uri("[https://maven.pkg.github.com/icanverse/PhotoEditor](https://maven.pkg.github.com/icanverse/PhotoEditor)")
         credentials {
-            // Kullanıcı adı ve Token'ı gradle.properties dosyasından çeker
             username = project.findProperty("gpr.usr") ?: System.getenv("GITHUB_ACTOR")
             password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
         }
     }
 }
+
+dependencies {
+    implementation 'com.github.icanverse:photo-editor:1.0.1'
+}
+
 
 🚀 Kullanım Rehberi
 1. Başlatma
@@ -91,5 +112,7 @@ byte[] finalResult = new ImageProcessor(imageBytes)
     // --- Sonuç ve Çıktı ---
     .process();                     // Tüm işlemleri uygular ve byte[] çıktı üretir
 
-Lisans
-Bu proje Apache License 2.0 ile lisanslanmıştır.
+📄 Lisans
+Bu proje Apache License 2.0 ile lisanslanmıştır. Daha fazla bilgi için LICENSE dosyasına bakabilirsiniz.
+
+Copyright © 2026 icanverse
