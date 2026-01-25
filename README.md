@@ -13,6 +13,25 @@
 * **Entegre Metadata:** Görüntü işlenirken orijinal dosyanın meta verilerini (`EXIF` vb.) korur.
 
 ---
+## 📦 Kurulum (Installation)
+
+`build.gradle` dosyanıza şunları ekleyin:
+
+```groovy
+repositories {
+    mavenCentral()
+    maven {
+        url = uri("[https://maven.pkg.github.com/icanverse/PhotoEditor](https://maven.pkg.github.com/icanverse/PhotoEditor)")
+        credentials {
+            username = "github_kullanici_adiniz"
+            password = "github_token_veya_key"
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.github.icanverse:photo-editor:1.0.1'
+}
 
 ##  Kullanım Rehberi
 
@@ -59,3 +78,4 @@ byte[] finalResult = new ImageProcessor(imageBytes)
 
     // --- Sonuç ve Çıktı ---
     .process();                     // Tüm işlemleri uygular ve byte[] çıktı üretir
+
