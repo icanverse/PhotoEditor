@@ -16,23 +16,31 @@
 
 ## 📦 Kurulum (Installation)
 
-`build.gradle` dosyanıza şunları ekleyin:
+Kütüphaneyi projenize eklemek için aşağıdaki adımları izleyin.
+
+### 1. GitHub Token Oluşturma (Gerekli)
+GitHub Packages üzerinden indirme yapabilmek için (GitHub politikası gereği) bir kimlik doğrulama token'ına ihtiyacınız vardır.
+
+1. GitHub'da **Settings > Developer Settings > Personal Access Tokens > Tokens (classic)** yolunu izleyin.
+2. **Generate new token (classic)** butonuna basın.
+3. Kapsam (Scope) olarak sadece **`read:packages`** kutucuğunu işaretleyin.
+4. Token'ı kopyalayın.
+
+### 2. Gradle Ayarları
+`build.gradle` (Project level) veya `settings.gradle` dosyanıza şu repoyu ekleyin:
 
 ```groovy
 repositories {
     mavenCentral()
     maven {
         name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/icanverse/PhotoEditor")
+        url = uri("[https://maven.pkg.github.com/icanverse/PhotoEditor](https://maven.pkg.github.com/icanverse/PhotoEditor)")
         credentials {
+            // Kullanıcı adı ve Token'ı gradle.properties dosyasından çeker
             username = project.findProperty("gpr.usr") ?: System.getenv("GITHUB_ACTOR")
             password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
         }
     }
-}
-
-dependencies {
-    implementation 'com.github.icanverse:photo-editor:1.0.1'
 }
 
 🚀 Kullanım Rehberi
