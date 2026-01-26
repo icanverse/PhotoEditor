@@ -108,4 +108,20 @@ public class ArtisticFilters {
         colorMask.release();
         sourceFloat.release();
     }
+
+    /**
+     * Resme Gaussian Blur (Bulanıklık) uygular.
+     * @param source Kaynak matris
+     * @param sigma Bulanıklık şiddeti (1 ile 50 arası idealdir)
+     */
+    public static void applyBlur(Mat source, double sigma) {
+        // Sigma değeri mutlaka tek sayı olmalı (OpenCV kuralı)
+        int kernelSize = (int) Math.ceil(sigma * 2.5) | 1; // Basit bir kernel hesaplaması
+
+        // Kernel boyutu çok küçükse işlem yapma
+        if (kernelSize < 1) kernelSize = 1;
+
+        // Gaussian Blur uygula (Source üzerine yazar)
+        Imgproc.GaussianBlur(source, source, new org.opencv.core.Size(kernelSize, kernelSize), sigma);
+    }
 }

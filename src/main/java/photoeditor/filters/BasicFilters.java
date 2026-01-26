@@ -1,10 +1,13 @@
 package photoeditor.filters;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import photoeditor.core.ImageAnalysis; // Analiz sınıfını import ettik
 import photoeditor.utils.ColorSpaceConverter;
+import photoeditor.filters.ToneAdjustment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,5 +84,31 @@ public class BasicFilters {
 
         return destination;
     }
+
+    /**
+     * Sıcaklık (Temperature)
+     */
+    public static Mat adjustTemperature(Mat source, double value) {
+        Mat destination = new Mat();
+        source.copyTo(destination);
+
+        List<Mat> channels = new ArrayList<>();
+        Core.split(destination, channels);
+
+        // Kırmızı (2) ve Mavi (0) kanalları değiştirerek sıcaklık algısı yaratılır.
+        if (value > 0) {
+            // Isıt: Kırmızıyı artır, Maviyi azalt
+            Core.add(channels.get(2), new Scalar(value), channels.get(2));
+            Core.subtract(channels.get(0), new Scalar(value), channels.get(0));
+        } else {
+            // Soğut: Maviyi artır, Kırmızıyı azalt
+            Core.add(channels.get(0), new Scalar(Math.abs(value)), channels.get(0));
+            Core.subtract(channels.get(2), new Scalar(Math.abs(value)), channels.get(2));
+        }
+
+        Core.merge(channels, destination);
+        return destination;
+    }
+
 
 }
