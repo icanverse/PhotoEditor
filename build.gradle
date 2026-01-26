@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.openpnp:opencv:4.9.0-0'
+    //implementation 'org.openpnp:opencv:4.9.0-0'
+    compileOnly 'org.openpnp:opencv:4.7.0-0' // Sadece kod yazarken referans için kalsın istiyorsan
     implementation 'com.drewnoakes:metadata-extractor:2.19.0'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')

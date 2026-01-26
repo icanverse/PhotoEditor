@@ -6,7 +6,7 @@ import org.opencv.imgproc.Imgproc;
 import photoeditor.MaskProcessors.Mask;
 import photoeditor.filters.*;
 import photoeditor.utils.ImageUtils;
-import photoeditor.utils.LibraryLoader;
+import photoeditor.utils.NativeLibraryLoader;
 
 import java.util.function.Consumer;
 
@@ -15,9 +15,23 @@ public class ImageProcessor {
     private Mat currentImage;
     private ImageAnalysis cachedAnalysis;       // Analiz nesnesini burada önbellek (cache) olarak tutabiliriz
     private final MetaDataAnalysis metaData;
+    private static NativeLibraryLoader libraryLoader;
+
+    public static void setNativeLoader(NativeLibraryLoader loader) {
+        libraryLoader = loader;
+    }
+
+    private void initializeOpenCV() {
+        // Eğer birisi (Main.java) bize bir loader verdiyse onu çalıştır.
+        if (libraryLoader != null) {
+            libraryLoader.loadLibrary();
+        }
+        // Eğer loader null ise (Android durumu), hiçbir şey yapma.
+        // Android zaten kendi tarafında (Activity'de) yüklemiş olacak.
+    }
 
     public ImageProcessor(byte[] imageBytes) {
-        LibraryLoader.load();
+        initializeOpenCV();
         this.currentImage = ImageUtils.bytesToMat(imageBytes);  // byte -> matris
         this.cachedAnalysis = new ImageAnalysis(this.currentImage); // analiz
         this.metaData = new MetaDataAnalysis(imageBytes);   // metadata verisini yükler
