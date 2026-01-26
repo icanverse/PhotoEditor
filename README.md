@@ -13,25 +13,6 @@
 * **Entegre Metadata:** Görüntü işlenirken orijinal dosyanın meta verilerini (`EXIF` vb.) korur.
 
 ---
-## 📦 Kurulum (Installation)
-
-`build.gradle` dosyanıza şunları ekleyin:
-
-```groovy
-repositories {
-    mavenCentral()
-    maven {
-        url = uri("[https://maven.pkg.github.com/icanverse/PhotoEditor](https://maven.pkg.github.com/icanverse/PhotoEditor)")
-        credentials {
-            username = "github_kullanici_adiniz"
-            password = "github_token_veya_key"
-        }
-    }
-}
-
-dependencies {
-    implementation 'com.github.icanverse:photo-editor:1.0.1'
-}
 
 ##  Kullanım Rehberi
 
@@ -44,10 +25,9 @@ Aşağıdaki örnekte `ImageProcessor` içinde bulunan tüm metodların kullanı
 Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsiniz.
 
 ```java
-    import org.opencv.imgproc.Imgproc; // Font sabitleri için gerekli
+import org.opencv.imgproc.Imgproc; // Font sabitleri için gerekli
 
-    byte[] finalResult = new ImageProcessor(imageBytes)
-    
+byte[] finalResult = new ImageProcessor(imageBytes)
     // --- Temel İşlemler ---
     .addBrightness(25.0)            // Parlaklık ekler (pozitif veya negatif)
     .addContrast(1.5)               // Kontrastı artırır (>1 artırır, <1 azaltır)
@@ -56,10 +36,13 @@ Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsini
     .addSharpen(0.5)                // Keskinleştirme uygular (Detayları belirginleştirir)
     .addClarity(5.0)                // Netlik (Clarity) ekler (Orta ton kontrastı)
     .makeGrayscale()                // Görüntüyü siyah-beyaz yapar
-    .addShadows(0.5)                // Karanlık bölgeleri (Gölgeleri) aydınlatır/kurtarır
-    .addHighlights(-0.2)            // Çok parlak alanları dengeler (Patlamaları önler)
-    .addVibrance(1.5)               // Soluk renkleri canlandırır (Doygun renkleri koruyarak - Akıllı Saturation)
 
+        // --- Ton Ayarlamaları --- 
+    .addShadows(0.5)         // Sadece karanlık bölgeleri aydınlatır
+    .addHighlights(-0.3)     // Çok parlak alanları kısar (Detay kurtarır)
+    .addVibrance(1.5);       // Soluk renkleri canlandırır (Doygunları korur)
+    
+    
     // --- Geometrik İşlemler ---
     .rotate(45.0)                   // Resmi 45 derece döndürür (Varsayılan beyaz arka plan)
     .rotate(45.0, 0, 0, 0)          // 45 derece döndürür, boşlukları siyah yapar
@@ -70,14 +53,22 @@ Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsini
     .resize(800, 600)               // Net piksel değerlerine göre boyutlandırır
     .cropCenterSquare()             // Görüntüyü merkezden kare olacak şekilde kırpar
 
-    // --- Maskeleme & Bölgesel İşlemler ---
+    // --- Sanatsal Efektler ---
+    .applyPixelate(15)              // 15 piksel boyutunda mozaik/piksel efekti
+    .applySepia()                   // Nostaljik kahverengi (Sepya) tonlama uygular
+    .applyVignette(1.2)             // Kenarları karartarak (Vignette) odağı merkeze toplar
+    .applyBlur(10)                  // 10 şiddetinde bulanıklık (Blur) verir
+
+    // --- Maskeleme & Bölgesel İşlemler (Lightroom Style) ---
 
     // 1. Maske Oluşturma
+    
     Mask gradientMask = MaskFilters.createLinearGradient(w, h, x1, y1, x2, y2); // Doğrusal geçişli maske oluşturur
     Mask radialMask = MaskFilters.createRadialGradient(w, h, cx, cy, radius);   // Merkezden dışa dairesel maske oluşturur
     mask.addBrushStroke(x, y, radius, hardness);                                // Maskeye fırça darbesi ekler (Kümülatif)
     
     // 2. Maskeyi Uygulama
+    
     .applyMaskedFilter(mask, p -> p.addExposure(0.5))       // Filtreyi sadece maskeli alana uygular (Dodge)
     .applyMaskedFilter(mask, p -> p.makeGrayscale())        // Sadece seçili alanı siyah-beyaz yapar
     .applyMaskedFilter(mask, p -> {                         // Seçili alana birden fazla işlem uygular
@@ -85,18 +76,12 @@ Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsini
         p.addTemperature(20);
     })
     
-    // --- Sanatsal Efektler ---
-    .applyPixelate(15)              // 15 piksel boyutunda mozaik/piksel efekti
-    .applySepia()                   // Nostaljik kahverengi (Sepya) tonlama uygular
-    .applyVignette(1.2)             // Kenarları karartarak (Vignette) odağı merkeze toplar
-    .applyBlur(10)                  // Gaussian Blur uygular (Bulanıklaştırma)
-
-    // --- Metin, Çıkartma veFiligran (Watermark) ---
+    // --- Metin ve Filigran (Watermark) ---
     .addWatermark("PROJE X", 2.0, 255, 0, 0, Imgproc.FONT_HERSHEY_COMPLEX) // Ortaya kırmızı yazı
     .addText("v1.0", 50, 50, 1.0, 255, 255, 255) // Koordinata (x=50, y=50) beyaz yazı ekler
     .addFooterText("© 2026")        // Sol alt köşeye küçük imza atar
-    .addSticker("assets/logo.png", 50, 50, 200, 100, 0.5)       // PNG Logo/Sticker yapıştırır
-    
+    .addSticker("assets/watermark.png", 50, 50, 200, 100, 0.3);    // %30 Opaklık ile Çıkartma ekle
+
     // --- Sonuç ve Çıktı ---
     .process();                     // Tüm işlemleri uygular ve byte[] çıktı üretir
 
