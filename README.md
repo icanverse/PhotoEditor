@@ -44,10 +44,11 @@ Aşağıdaki örnekte `ImageProcessor` içinde bulunan tüm metodların kullanı
 Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsiniz.
 
 ```java
-import org.opencv.imgproc.Imgproc; // Font sabitleri için gerekli
+    import org.opencv.imgproc.Imgproc; // Font sabitleri için gerekli
 
-byte[] finalResult = new ImageProcessor(imageBytes)
-    // --- Renk, Işık ve Detay Ayarları ---
+    byte[] finalResult = new ImageProcessor(imageBytes)
+    
+    // --- Temel İşlemler ---
     .addBrightness(25.0)            // Parlaklık ekler (pozitif veya negatif)
     .addContrast(1.5)               // Kontrastı artırır (>1 artırır, <1 azaltır)
     .addSaturation(1.2)             // Renk doygunluğunu canlandırır
@@ -55,6 +56,9 @@ byte[] finalResult = new ImageProcessor(imageBytes)
     .addSharpen(0.5)                // Keskinleştirme uygular (Detayları belirginleştirir)
     .addClarity(5.0)                // Netlik (Clarity) ekler (Orta ton kontrastı)
     .makeGrayscale()                // Görüntüyü siyah-beyaz yapar
+    .addShadows(0.5)                // Karanlık bölgeleri (Gölgeleri) aydınlatır/kurtarır
+    .addHighlights(-0.2)            // Çok parlak alanları dengeler (Patlamaları önler)
+    .addVibrance(1.5)               // Soluk renkleri canlandırır (Doygun renkleri koruyarak - Akıllı Saturation)
 
     // --- Geometrik İşlemler ---
     .rotate(45.0)                   // Resmi 45 derece döndürür (Varsayılan beyaz arka plan)
@@ -66,16 +70,33 @@ byte[] finalResult = new ImageProcessor(imageBytes)
     .resize(800, 600)               // Net piksel değerlerine göre boyutlandırır
     .cropCenterSquare()             // Görüntüyü merkezden kare olacak şekilde kırpar
 
+    // --- Maskeleme & Bölgesel İşlemler ---
+
+    // 1. Maske Oluşturma
+    Mask gradientMask = MaskFilters.createLinearGradient(w, h, x1, y1, x2, y2); // Doğrusal geçişli maske oluşturur
+    Mask radialMask = MaskFilters.createRadialGradient(w, h, cx, cy, radius);   // Merkezden dışa dairesel maske oluşturur
+    mask.addBrushStroke(x, y, radius, hardness);                                // Maskeye fırça darbesi ekler (Kümülatif)
+    
+    // 2. Maskeyi Uygulama
+    .applyMaskedFilter(mask, p -> p.addExposure(0.5))       // Filtreyi sadece maskeli alana uygular (Dodge)
+    .applyMaskedFilter(mask, p -> p.makeGrayscale())        // Sadece seçili alanı siyah-beyaz yapar
+    .applyMaskedFilter(mask, p -> {                         // Seçili alana birden fazla işlem uygular
+        p.addContrast(1.1);
+        p.addTemperature(20);
+    })
+    
     // --- Sanatsal Efektler ---
     .applyPixelate(15)              // 15 piksel boyutunda mozaik/piksel efekti
     .applySepia()                   // Nostaljik kahverengi (Sepya) tonlama uygular
     .applyVignette(1.2)             // Kenarları karartarak (Vignette) odağı merkeze toplar
+    .applyBlur(10)                  // Gaussian Blur uygular (Bulanıklaştırma)
 
-    // --- Metin ve Filigran (Watermark) ---
+    // --- Metin, Çıkartma veFiligran (Watermark) ---
     .addWatermark("PROJE X", 2.0, 255, 0, 0, Imgproc.FONT_HERSHEY_COMPLEX) // Ortaya kırmızı yazı
     .addText("v1.0", 50, 50, 1.0, 255, 255, 255) // Koordinata (x=50, y=50) beyaz yazı ekler
     .addFooterText("© 2026")        // Sol alt köşeye küçük imza atar
-
+    .addSticker("assets/logo.png", 50, 50, 200, 100, 0.5)       // PNG Logo/Sticker yapıştırır
+    
     // --- Sonuç ve Çıktı ---
     .process();                     // Tüm işlemleri uygular ve byte[] çıktı üretir
 

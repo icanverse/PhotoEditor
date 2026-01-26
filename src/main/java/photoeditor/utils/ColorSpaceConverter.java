@@ -29,4 +29,16 @@ public class ColorSpaceConverter {
         return destination;
     }
 
+    public static Mat bgrToHls(Mat source) {
+        Mat destination = new Mat();
+        Imgproc.cvtColor(source, destination, Imgproc.COLOR_BGR2HLS);
+        return destination;
+    }
+
+    public static Mat hlsToBgr(Mat source) {
+        Mat destination = new Mat();
+        Imgproc.cvtColor(source, destination, Imgproc.COLOR_HLS2BGR);
+        return destination;
+    }
+
 }
