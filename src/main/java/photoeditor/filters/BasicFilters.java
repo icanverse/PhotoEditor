@@ -76,11 +76,31 @@ public class BasicFilters {
 
     /// Netlik (Clarity)
     public static Mat adjustClarity(Mat source, double sigma) {
+        // Güvenlik Kontrolü: 0 veya negatifse orijinali döndür
+        if (sigma <= 0) {
+            return source.clone();
+        }
+
         Mat destination = new Mat();
         Mat detailMask = new Mat();
 
-        Imgproc.GaussianBlur(source, detailMask, new org.opencv.core.Size(0, 0), sigma);
-        Core.addWeighted(source, 1.5, detailMask, -0.5, 0, destination);
+        try {
+            // Güvenlik Kontrolü: Minimum sigma değeri
+            double safeSigma = Math.max(sigma, 0.5);
+
+            // İşlemler
+            Imgproc.GaussianBlur(source, detailMask, new org.opencv.core.Size(0, 0), safeSigma);
+            Core.addWeighted(source, 1.5, detailMask, -0.5, 0, destination);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // ÇOK ÖNEMLİ: Ara işlemde kullanılan matris (detailMask) hafızadan silinmeli!
+            // destination'ı silmiyoruz çünkü onu return ediyoruz (alan yer silecek).
+            if (detailMask != null) {
+                detailMask.release();
+            }
+        }
 
         return destination;
     }

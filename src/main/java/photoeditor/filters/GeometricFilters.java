@@ -77,4 +77,76 @@ public class GeometricFilters {
 
         return source.submat(roi).clone();
     }
+
+    /**
+     * Açılı Kırpma (Rotated Crop):
+     * Belirtilen eğik dikdörtgen (RotatedRect) alanını resimden düzleştirerek çıkarır.
+     */
+    public static Mat cropRotated(Mat source, RotatedRect rotatedRect) {
+        Mat destination = new Mat();
+
+        // Döndürme Matrisi Oluştur
+        // Belirtilen dikdörtgenin açısı ve merkezi kullanılarak döndürme matrisi hesaplanır.
+        Mat rotationMatrix = Imgproc.getRotationMatrix2D(rotatedRect.center, rotatedRect.angle, 1.0);
+
+        // Resmi Döndür
+        Mat rotatedImage = new Mat();
+        Imgproc.warpAffine(source, rotatedImage, rotationMatrix, source.size(), Imgproc.INTER_CUBIC);
+
+        // Alt Resim Çıkarma (Sub-pixel accuracy)
+        // Döndürülmüş resmin merkezinden, istenen boyutta parçayı alır.
+        Imgproc.getRectSubPix(rotatedImage, rotatedRect.size, rotatedRect.center, destination);
+
+        // Bellek temizliği
+        rotationMatrix.release();
+        rotatedImage.release();
+
+        return destination;
+    }
+
+    /**
+     * Perspektif Düzeltme (Perspective Correction):
+     * Verilen 4 köşe noktasını alarak resmi kuş bakışı (flat) görünüme dönüştürür.
+     * @param source Kaynak resim
+     * @param srcPoints Resim üzerindeki 4 köşe noktası (Sırasıyla: Sol-Üst, Sağ-Üst, Sağ-Alt, Sol-Alt)
+     * @param width Çıktı resminin istenen genişliği
+     * @param height Çıktı resminin istenen yüksekliği
+     */
+
+    public static Mat adjustPerspective(Mat source, Point[] srcPoints, int width, int height) {
+        if (srcPoints.length != 4) {
+            throw new IllegalArgumentException("Perspektif dönüşümü için tam olarak 4 nokta gereklidir.");
+        }
+
+        Mat destination = new Mat();
+
+        // Kaynak Noktaları Tanımla
+        // OpenCV MatOfPoint2f formatına dönüştürme
+        MatOfPoint2f srcMarker = new MatOfPoint2f(srcPoints);
+
+        // Hedef Noktaları Tanımla
+        // Çıktı resminin köşelerine denk gelecek koordinatlar (0,0 -> width,height)
+        Point[] dstPoints = new Point[] {
+                new Point(0, 0),          // Sol-Üst
+                new Point(width, 0),      // Sağ-Üst
+                new Point(width, height), // Sağ-Alt
+                new Point(0, height)      // Sol-Alt
+        };
+        MatOfPoint2f dstMarker = new MatOfPoint2f(dstPoints);
+
+        // Perspektif Dönüşüm Matrisini Hesapla
+        Mat perspectiveTransform = Imgproc.getPerspectiveTransform(srcMarker, dstMarker);
+
+        // Dönüşümü Uygula (Warp)
+        Imgproc.warpPerspective(source, destination, perspectiveTransform, new Size(width, height));
+
+        // Bellek temizliği
+        srcMarker.release();
+        dstMarker.release();
+        perspectiveTransform.release();
+
+        return destination;
+    }
+
+
 }

@@ -1,10 +1,11 @@
 plugins {
     id 'java-library' // 'java' yerine 'java-library' daha doğrudur
     id 'maven-publish' // Yayınlamak için şart
+    id 'me.champeau.jmh' version '0.7.2' // <-- 1. EKLEME: JMH Eklentisi
 }
 
 group = 'com.github.icanverse' // Github kullanıcı adınla uyumlu olmalı
-version = '1.0.2'
+version = '1.0.4'
 
 repositories {
     mavenCentral()
@@ -17,6 +18,14 @@ dependencies {
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // --- 2. EKLEME: JMH İÇİN BAĞIMLILIKLAR ---
+    // JMH çalışırken OpenCV'nin GERÇEKTEN orada olması lazım.
+    // 'jmh' konfigürasyonu sadece benchmark sırasında kullanılır, kütüphanenize dahil olmaz.
+    jmh 'org.openpnp:opencv:4.7.0-0'
+
+    // JMH'in çalışması için gereken işlemci
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
 
 test {
@@ -26,6 +35,24 @@ test {
 java {
     withSourcesJar() // Kaynak kodları da pakete ekler (Yazılımcılar içiini görebilsin diye)
     withJavadocJar() // Dokümantasyonu da ekler
+}
+
+// --- 3. EKLEME: SİMÜLASYON AYARLARI ---
+jmh {
+    // SÜRÜMÜ SABİTLİYORUZ (Çözüm Burası)
+    jmhVersion = '1.37'
+
+    // Testin kaç kere tekrar edeceği (Hızlı sonuç için düşük tuttum, artırabilirsiniz)
+    warmupIterations = 2
+    iterations = 5
+    fork = 1
+    threads = 1
+    benchmarkMode = ['avgt'] // Ortalama süre (Average Time)
+    timeUnit = 'ms'          // Milisaniye cinsinden sonuç
+    failOnError = true
+
+    // Eğer 'Duplicate classes' hatası alırsanız bu ayarı true yapın
+    duplicateClassesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // --- YAYINLAMA AYARLARI ---

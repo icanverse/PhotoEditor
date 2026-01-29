@@ -27,7 +27,30 @@ Fluent yapısı sayesinde istediğiniz metodları seçip uç uca ekleyebilirsini
 ```java
 import org.opencv.imgproc.Imgproc; // Font sabitleri için gerekli
 
-byte[] finalResult = new ImageProcessor(imageBytes)
+    byte[] finalResult = new ImageProcessor(imageBytes)
+    
+    // İşlenmiş görüntüyü diske kaydedebilir veya uygulama içinde kullanmak üzere byte[] veya Mat formatında alabilirsiniz.
+    
+    // --- Kayıt ve Dönüş Tipleri ---
+    try (ImageProcessor editor = new ImageProcessor(imageBytes)) {
+    
+    // İşlemleri uygula
+    editor.addBrightness(10).makeGrayscale();
+
+    // 1. Diske Kaydet
+    editor.save("output_folder/result.jpg");
+    editor.save("output/thumb.jpg", 0.5);   // Görseli *0.5 (küçülterek) kaydet
+
+    // 2. Byte Dizisi Olarak Al (API veya UI için)
+    byte[] resultJpeg = editor.getResultAsBytes();       // Varsayılan JPG
+    byte[] resultPng  = editor.getResultAsBytes(".png"); // Format belirtilebilir
+    byte[] psdBytes = editor.getResultAsBytes(".psd");   // PSD Çıktı verir
+ 
+    // 3. Ham OpenCV Matrisi Olarak Al (İleri seviye işlemler için)
+    Mat rawMatrix = editor.getResult();
+
+}   // Blok bitiminde bellek (Native Memory) otomatik temizlenir.
+    
     // --- Temel İşlemler ---
     .addBrightness(25.0)            // Parlaklık ekler (pozitif veya negatif)
     .addContrast(1.5)               // Kontrastı artırır (>1 artırır, <1 azaltır)
@@ -37,11 +60,10 @@ byte[] finalResult = new ImageProcessor(imageBytes)
     .addClarity(5.0)                // Netlik (Clarity) ekler (Orta ton kontrastı)
     .makeGrayscale()                // Görüntüyü siyah-beyaz yapar
 
-        // --- Ton Ayarlamaları --- 
+    // --- Ton Ayarlamaları --- 
     .addShadows(0.5)         // Sadece karanlık bölgeleri aydınlatır
     .addHighlights(-0.3)     // Çok parlak alanları kısar (Detay kurtarır)
     .addVibrance(1.5);       // Soluk renkleri canlandırır (Doygunları korur)
-    
     
     // --- Geometrik İşlemler ---
     .rotate(45.0)                   // Resmi 45 derece döndürür (Varsayılan beyaz arka plan)
@@ -52,14 +74,49 @@ byte[] finalResult = new ImageProcessor(imageBytes)
     .scale(0.5)                     // Resmi %50 oranında küçültür
     .resize(800, 600)               // Net piksel değerlerine göre boyutlandırır
     .cropCenterSquare()             // Görüntüyü merkezden kare olacak şekilde kırpar
+    
+    // --- İleri Seviye Geometrik İşlemler --- 
+    
+    // Merkez(x,y), Boyut(w,h), Açı(derece)
+    RotatedRect selection = new RotatedRect(
+        new Point(250, 250), 
+        new Size(100, 50), 
+        30.0
+    );
+
+    photoEditor
+        .cropRotated(selection)
+        .save("straightened_object.jpg");
+        
+            // Resim üzerindeki 4 köşe noktası (Sol-Üst, Sağ-Üst, Sağ-Alt, Sol-Alt)
+        Point[] corners = new Point[] {
+            new Point(50, 50),
+            new Point(400, 80),
+            new Point(380, 500),
+            new Point(60, 480)
+        };
+    
+    photoEditor
+        // Köşeleri verilen alanı 500x700 boyutunda düz bir belgeye dönüştürür
+        .adjustPerspective(corners, 500, 700)
+        .save("scanned_document.jpg");
+    
+    .adjustPerspective()
+    .cropRotated()
 
     // --- Sanatsal Efektler ---
     .applyPixelate(15)              // 15 piksel boyutunda mozaik/piksel efekti
     .applySepia()                   // Nostaljik kahverengi (Sepya) tonlama uygular
     .applyVignette(1.2)             // Kenarları karartarak (Vignette) odağı merkeze toplar
     .applyBlur(10)                  // 10 şiddetinde bulanıklık (Blur) verir
+    .applyBlur_forStream()
+    .applyBlur_Fast
+    .applyMedianBlur()
 
-    // --- Maskeleme & Bölgesel İşlemler (Lightroom Style) ---
+    // --- Adaptif Efekler ---
+    .applyCandleEffect()                // Sıcak, romantik ve loş bir atmosfer verir (Sabit Profil)
+    .applyAtmosphereFilter(0.25)        // Görseldeki en baskın rengi bularak 0.25 yoğunlukta filtreler
+    .applyStyleFromImage("/downloads/sunset.jpg", 0.50) // Match Color, yoldaki görselin renk yoğunluğu ile ana göreli filtreler
 
     // 1. Maske Oluşturma
     
@@ -81,7 +138,3 @@ byte[] finalResult = new ImageProcessor(imageBytes)
     .addText("v1.0", 50, 50, 1.0, 255, 255, 255) // Koordinata (x=50, y=50) beyaz yazı ekler
     .addFooterText("© 2026")        // Sol alt köşeye küçük imza atar
     .addSticker("assets/watermark.png", 50, 50, 200, 100, 0.3);    // %30 Opaklık ile Çıkartma ekle
-
-    // --- Sonuç ve Çıktı ---
-    .process();                     // Tüm işlemleri uygular ve byte[] çıktı üretir
-
