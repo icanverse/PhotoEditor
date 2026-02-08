@@ -11,20 +11,26 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
-    //implementation 'org.openpnp:opencv:4.9.0-0'
-    compileOnly 'org.openpnp:opencv:4.7.0-0' // Sadece kod yazarken referans için kalsın istiyorsan
+    //compileOnly 'org.openpnp:opencv:4.7.0-0'
+    //compileOnly 'com.microsoft.onnxruntime:onnxruntime:1.17.1'
+
+    implementation 'org.openpnp:opencv:4.7.0-0'
+    implementation 'com.microsoft.onnxruntime:onnxruntime:1.17.1'
+
+
+    // OpenCV'nin GPU destekli FULL sürümü (Bytedeco JavaCV)
+    // implementation 'org.bytedeco:javacv-platform:1.5.10'
+
+    // Metadata okuyucu (Senin kütüphanen)
     implementation 'com.drewnoakes:metadata-extractor:2.19.0'
 
+    // Test araçları
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
-    // --- 2. EKLEME: JMH İÇİN BAĞIMLILIKLAR ---
-    // JMH çalışırken OpenCV'nin GERÇEKTEN orada olması lazım.
-    // 'jmh' konfigürasyonu sadece benchmark sırasında kullanılır, kütüphanenize dahil olmaz.
-    jmh 'org.openpnp:opencv:4.7.0-0'
-
-    // JMH'in çalışması için gereken işlemci
+    // JMH
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
 

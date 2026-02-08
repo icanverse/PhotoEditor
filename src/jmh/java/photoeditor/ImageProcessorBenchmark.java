@@ -63,10 +63,10 @@ public class ImageProcessorBenchmark {
 
     // 1. SENARYO: Analizsiz, Sabit Filtre (Referans Hız)
     // Sadece ParallelProcessor ile boyama işlemi yapar.
-    @Benchmark
-    public void testCandleFilter() {
-        filters.applyCandleEffect(sourceMat, destMat);
-    }
+    //@Benchmark
+//    public void testCandleFilter() {
+//        filters.applyCandleEffect(sourceMat, destMat);
+//    }
 
     // 2. SENARYO: Analizli, Akıllı Filtre (Test Edilen)
     // Önce 50x50 resimde K-Means analizi yapar, rengi bulur, sonra boyar.

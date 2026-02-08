@@ -6,6 +6,7 @@ import photoeditor.utils.ParallelProcessor;
 import photoeditor.utils.TiledProcessor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -71,48 +72,89 @@ public class ArtisticFilters {
     }
 
     /**
-     * Vignette (Kenar Karartma)
-     * Gauss Kernel çarpımı ile yapılır.
+     * Vignette (Kenar Karartma veya Beyazlatma)
      * @param source    İşlenecek resim
-     * @param intensity Vinyet için katsayı
+     * @param intensity Vinyet şiddeti.
+     * Pozitif (+) değerler köşeleri KARARTIR.
+     * Negatif (-) değerler köşeleri BEYAZLATIR.
      */
     public static void applyVignette(Mat source, double intensity) {
+        // 0 kontrolü: Etki yoksa işlem yapma
+        if (Math.abs(intensity) < 0.001) return;
+
         int rows = source.rows();
         int cols = source.cols();
 
-        double sigmaX = cols / (1.5 * intensity);
-        double sigmaY = rows / (1.5 * intensity);
+        // 1. Sigma hesaplarken mutlak değer al (Negatif sigma olamaz)
+        double k = Math.abs(intensity);
+        double sigmaX = cols / (1.5 * k);
+        double sigmaY = rows / (1.5 * k);
 
+        // 2. Kernel oluşturma
         Mat kernelX = Imgproc.getGaussianKernel(cols, sigmaX, CvType.CV_32F);
         Mat kernelY = Imgproc.getGaussianKernel(rows, sigmaY, CvType.CV_32F);
 
         Mat kernel = new Mat();
         Core.gemm(kernelY, kernelX.t(), 1, new Mat(), 0, kernel);
-
         Core.normalize(kernel, kernel, 0, 1, Core.NORM_MINMAX);
 
-        List<Mat> maskChannels = new ArrayList<>();
-        maskChannels.add(kernel);
-        maskChannels.add(kernel);
-        maskChannels.add(kernel);
-        Mat colorMask = new Mat();
-        Core.merge(maskChannels, colorMask);
+        // Maskeyi 3 kanala çıkar (Renkli resim için)
+        Mat mask = new Mat();
+        List<Mat> maskChannels = Arrays.asList(kernel, kernel, kernel); // ArrayList yerine Arrays.asList daha pratiktir
+        Core.merge(maskChannels, mask);
 
+        // İşlem için float'a çevir
         Mat sourceFloat = new Mat();
         source.convertTo(sourceFloat, CvType.CV_32F);
 
-        Core.multiply(sourceFloat, colorMask, sourceFloat);
+        Mat result = new Mat();
 
-        sourceFloat.convertTo(source, CvType.CV_8UC3);
+        if (intensity > 0) {
+            // --- POZİTİF: SİYAH VİNYET ---
+            // Formül: Source * Mask
+            // Maske merkezde 1 (aynen kalır), köşelerde 0 (siyahlaşır)
+            Core.multiply(sourceFloat, mask, result);
+        } else {
+            // --- NEGATİF: BEYAZ VİNYET ---
+            // Formül: Source * Mask + White * (1 - Mask)
+            // Mantık: Resmin orijinalliğini koru ama maskenin azaldığı yerleri beyaza tamamla.
 
-        // Temizlik
+            Mat inverseMask = new Mat();
+            Mat ones = new Mat(mask.size(), mask.type(), new Scalar(1.0, 1.0, 1.0));
+
+            // 1 - Mask işlemini yap (Ters maske: Merkez 0, Köşeler 1)
+            Core.subtract(ones, mask, inverseMask);
+
+            // Köşeleri beyaz yapmak için: (InverseMask * 255)
+            // 32F formatında beyaz 255.0'dır.
+            Mat whitePart = new Mat();
+            Core.multiply(inverseMask, new Scalar(255, 255, 255), whitePart);
+
+            // Orijinal resmin maskelenmiş hali (Merkez net, köşeler karanlık)
+            Mat sourcePart = new Mat();
+            Core.multiply(sourceFloat, mask, sourcePart);
+
+            // İkisini topla: (Merkez Resim + Köşeler Beyaz)
+            Core.add(sourcePart, whitePart, result);
+
+            // Temizlik
+            inverseMask.release();
+            ones.release();
+            whitePart.release();
+            sourcePart.release();
+        }
+
+        // Sonucu kaynağa geri yaz
+        result.convertTo(source, CvType.CV_8UC3);
+
+        // Genel Temizlik
         kernelX.release();
         kernelY.release();
         kernel.release();
-        colorMask.release();
+        mask.release();
         sourceFloat.release();
+        result.release();
     }
-
     /**
      * Resme Gaussian Blur (Bulanıklık) uygular.
      * @param source Kaynak matris
@@ -202,6 +244,80 @@ public class ArtisticFilters {
 
         return smallPreview;
     }
+
+    /**
+     * Resme Hareket Bulanıklığı (Motion Blur) uygular.
+     * Sanki fotoğraf makinesi hareket ederken çekilmiş gibi bir etki yaratır.
+     *
+     * @param source Kaynak matris (Üzerine yazar - In Place)
+     * @param size   Hareketin büyüklüğü (Kernel Size). Örn: 15, 30. Ne kadar büyükse o kadar hızlı görünür.
+     * @param angle  Hareketin açısı (Derece cinsinden). 0 = Yatay, 90 = Dikey.
+     */
+    public static void applyMotionBlur(Mat source, int size, double angle) {
+        // Güvenlik: Boyut çok küçükse işlem yapma
+        if (size < 2) return;
+
+        // Kernel boyutu tek sayı olmalı
+        if (size % 2 == 0) size++;
+
+        // --- 1. ADIM: Motion Blur Kernel'ini Oluştur ---
+        // Bu işlem ağırdır, o yüzden TiledProcessor'a girmeden SADECE BİR KERE yapıyoruz.
+        Mat kernel = createMotionKernel(size, angle);
+
+        // --- 2. ADIM: Paralel İşleme (TiledProcessor) ---
+        // Padding değeri kernel boyutunun yarısı kadar olmalı ki kenarlarda siyahlık oluşmasın.
+        int padding = size / 2;
+
+        // Kaynak bozulmasın diye geçici hedef oluştur
+        Mat destination = new Mat();
+
+        // Lambda içinde dışarıdaki 'kernel' nesnesini kullanıyoruz
+        photoeditor.utils.TiledProcessor.apply(source, destination, padding, (srcTile, dstTile) -> {
+            // filter2D: Özel kernel ile konvolüsyon işlemi yapar
+            // ddepth -1: Kaynakla aynı derinliği (CV_8U) koru demektir.
+            Imgproc.filter2D(srcTile, dstTile, -1, kernel);
+        });
+
+        // --- 3. ADIM: Sonucu Kaydet ve Temizlik ---
+        destination.copyTo(source);
+        destination.release();
+        kernel.release();
+    }
+
+    /**
+     * Yardımcı Metot: Belirtilen açı ve boyutta bir çizgi (Kernel) oluşturur.
+     */
+    private static Mat createMotionKernel(int size, double angle) {
+        // 1. Boş bir kare matris oluştur (Siyah)
+        Mat kernel = Mat.zeros(size, size, org.opencv.core.CvType.CV_32F);
+
+        // 2. Açıyı radyana çevir
+        double angleRad = Math.toRadians(angle);
+
+        // 3. Merkez noktayı bul
+        int center = size / 2;
+
+        // 4. Çizginin başlangıç ve bitiş noktalarını hesapla (Trigonometri)
+        // Cosinüs yatay, Sinüs dikey bileşeni verir.
+        int xStart = (int) Math.round(center - (size / 2.0) * Math.cos(angleRad));
+        int yStart = (int) Math.round(center - (size / 2.0) * Math.sin(angleRad));
+        int xEnd = (int) Math.round(center + (size / 2.0) * Math.cos(angleRad));
+        int yEnd = (int) Math.round(center + (size / 2.0) * Math.sin(angleRad));
+
+        // 5. Matrisin üzerine beyaz bir çizgi çiz
+        org.opencv.core.Point p1 = new org.opencv.core.Point(xStart, yStart);
+        org.opencv.core.Point p2 = new org.opencv.core.Point(xEnd, yEnd);
+        Imgproc.line(kernel, p1, p2, new org.opencv.core.Scalar(1.0), 1);
+
+        // 6. Normalizasyon (Kernelin toplamı 1 olmalı, yoksa resim çok parlar veya kararır)
+        org.opencv.core.Scalar sum = org.opencv.core.Core.sumElems(kernel);
+        if (sum.val[0] > 0) {
+            org.opencv.core.Core.divide(kernel, sum, kernel);
+        }
+
+        return kernel;
+    }
+
 
     /**
      * Resme Median Blur (Gürültü Giderici) uygular.

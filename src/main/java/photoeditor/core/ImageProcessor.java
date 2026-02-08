@@ -6,13 +6,16 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import photoeditor.MaskProcessors.ApplierMaskEffect;
 import photoeditor.MaskProcessors.Mask;
+import photoeditor.MaskProcessors.SmartMaskFactory;
 import photoeditor.filters.*; // ParallelAdaptiveFilters burada olmalı
 import photoeditor.utils.ImageUtils;
 import photoeditor.utils.NativeLibraryLoader;
 import photoeditor.utils.PsdWriter;
 
 import java.io.IOException;
+import java.util.Stack;
 import java.util.function.Consumer;
 
 public class ImageProcessor implements AutoCloseable {
@@ -23,23 +26,36 @@ public class ImageProcessor implements AutoCloseable {
     private final AdaptiveFilters adaptiveFilters;
 
     private static NativeLibraryLoader libraryLoader;
+    private SmartMaskFactory maskFactory;
+
+    private final Stack<Mat> undoStack = new Stack<>();
+    private final Stack<Mat> redoStack = new Stack<>();
+    private static final int MAX_STACK_SIZE = 7;
 
     public static void setNativeLoader(NativeLibraryLoader loader) {
         libraryLoader = loader;
     }
 
-    private void initializeOpenCV() {
+    private void initializeNativeEngines() {
         if (libraryLoader != null) {
+            // Bu çağrı platforma göre hem OpenCV hem ONNX'i yüklemeli
             libraryLoader.loadLibrary();
         }
     }
 
+    // Factory'yi sisteme tanıtmak için
+    public ImageProcessor setMaskFactory(SmartMaskFactory factory) {
+        this.maskFactory = factory;
+        return this;
+    }
+
     public ImageProcessor(byte[] imageBytes) {
-        initializeOpenCV();
+        initializeNativeEngines();
         this.currentImage = ImageUtils.bytesToMat(imageBytes);
         this.cachedAnalysis = new ImageAnalysis(this.currentImage);
         this.metaData = new MetaDataAnalysis(imageBytes);
         this.adaptiveFilters = new AdaptiveFilters();
+
     }
 
     private void refreshAnalysis() {
@@ -152,6 +168,9 @@ public class ImageProcessor implements AutoCloseable {
             this.currentImage.release();
             this.currentImage = null;
         }
+        // Stack'leri temizle
+        clearStack(undoStack);
+        clearStack(redoStack);
     }
 
     /**
@@ -167,52 +186,114 @@ public class ImageProcessor implements AutoCloseable {
     }
 
     ///
+    /// >>> Undo Redo
+    ///
+
+    /**
+     * Mevcut durumu Undo yığınına kaydeder.
+     * Herhangi bir filtre/işlem uygulanmadan HEMEN ÖNCE çağrılmalıdır.
+     */
+    private void saveStep() {
+        // Redo yığınını temizle (Yeni bir işlem yapıldığında ileri alma mantığı bozulur)
+        clearStack(redoStack);
+
+        // Mevcut resmin bir kopyasını al ve Undo yığınına ekle
+        undoStack.push(this.currentImage.clone());
+
+        // Limit aşılırsa en eski kaydı sil (Bellek yönetimi)
+        if (undoStack.size() > MAX_STACK_SIZE) {
+            Mat oldest = undoStack.remove(0);
+            if (oldest != null) oldest.release();
+        }
+    }
+
+    private void clearStack(Stack<Mat> stack) {
+        while (!stack.isEmpty()) {
+            Mat m = stack.pop();
+            if (m != null) m.release();
+        }
+    }
+
+    public boolean canUndo() { return !undoStack.isEmpty(); }
+    public boolean canRedo() { return !redoStack.isEmpty(); }
+
+    public ImageProcessor undo() {
+        if (canUndo()) {
+            // Mevcut hali Redo'ya at
+            redoStack.push(this.currentImage.clone());
+
+            // Undo'dan son halini çek ve değiştir
+            swapImage(undoStack.pop());
+        }
+        return this;
+    }
+
+    public ImageProcessor redo() {
+        if (canRedo()) {
+            // Mevcut hali Undo'ya geri at
+            undoStack.push(this.currentImage.clone());
+
+            // Redo'dan çek ve değiştir
+            swapImage(redoStack.pop());
+        }
+        return this;
+    }
+
+    ///
     /// >>> BasicFilter
     ///
 
     public ImageProcessor addBrightness(double value) {
+        saveStep();
         this.currentImage = BasicFilters.adjustBrightnessContrast(this.currentImage, 1.0, value);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addContrast(double value) {
+        saveStep();
         this.currentImage = BasicFilters.adjustBrightnessContrast(this.currentImage, value, 0);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addExposure(double value) {
+        saveStep();
         this.currentImage = BasicFilters.adjustExposure(this.currentImage, value);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addSharpen(double amount) {
-        this.currentImage = BasicFilters.sharpen(this.currentImage, amount);
+        saveStep();
+        this.currentImage = BasicFilters.applySharpness(this.currentImage, amount);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addClarity(double sigma) {
+        saveStep();
         this.currentImage = BasicFilters.adjustClarity(this.currentImage, sigma);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addSaturation(double value) {
+        saveStep();
         this.currentImage = BasicFilters.adjustSaturation(this.currentImage, this.cachedAnalysis, value);
         refreshAnalysis();
         return this;
     }
 
-    public ImageProcessor makeGrayscale() {
-        this.currentImage = BasicFilters.toGrayscale(this.currentImage, this.cachedAnalysis);
+    public ImageProcessor addGrayScale(double value) {
+        saveStep();
+        this.currentImage = BasicFilters.adjustGrayscale(this.currentImage, value);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addTemperature(double value) {
+        saveStep();
         this.currentImage = BasicFilters.adjustTemperature(this.currentImage, value);
         refreshAnalysis();
         return this;
@@ -223,18 +304,21 @@ public class ImageProcessor implements AutoCloseable {
     ///
 
     public ImageProcessor addShadows(double value) {
+        saveStep();
         this.currentImage = ToneAdjustment.applyShadows(this.currentImage, value);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addHighlights(double value) {
+        saveStep();
         this.currentImage = ToneAdjustment.applyHighlights(this.currentImage, value);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor addVibrance(double value) {
+        saveStep();
         this.currentImage = ToneAdjustment.applyVibrance(this.currentImage, value);
         refreshAnalysis();
         return this;
@@ -248,6 +332,7 @@ public class ImageProcessor implements AutoCloseable {
         Mat originalState = this.currentImage.clone();
         filterOperation.accept(this);
         photoeditor.MaskProcessors.MaskBlender.blend(originalState, this.currentImage, mask);
+        saveStep();
         originalState.release();
         refreshAnalysis();
         return this;
@@ -263,6 +348,7 @@ public class ImageProcessor implements AutoCloseable {
 
     public ImageProcessor rotate(double angle, int r, int g, int b) {
         Scalar color = new Scalar(b, g, r);
+        saveStep();
         this.currentImage = GeometricFilters.rotate(this.currentImage, angle, color);
         refreshAnalysis();
         return this;
@@ -272,18 +358,21 @@ public class ImageProcessor implements AutoCloseable {
     public ImageProcessor rotateLeft() { return this.rotate(270); }
 
     public ImageProcessor flipHorizontal() {
+        saveStep();
         this.currentImage = GeometricFilters.flip(this.currentImage, true, false);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor scale(double factor) {
+        saveStep();
         this.currentImage = GeometricFilters.scale(this.currentImage, factor);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor resize(int width, int height) {
+        saveStep();
         this.currentImage = GeometricFilters.resize(this.currentImage, width, height);
         refreshAnalysis();
         return this;
@@ -293,6 +382,7 @@ public class ImageProcessor implements AutoCloseable {
         int minSide = Math.min(this.currentImage.width(), this.currentImage.height());
         int x = (this.currentImage.width() - minSide) / 2;
         int y = (this.currentImage.height() - minSide) / 2;
+        saveStep();
         this.currentImage = GeometricFilters.crop(this.currentImage, x, y, minSide, minSide);
         refreshAnalysis();
         return this;
@@ -305,6 +395,7 @@ public class ImageProcessor implements AutoCloseable {
     public ImageProcessor addText(String text, int x, int y, double scale, int r, int g, int b, int fontFace) {
         Scalar color = new Scalar(b, g, r);
         DecorationFilters.addText(this.currentImage, text, x, y, scale, color, 2, fontFace);
+        saveStep();
         refreshAnalysis();
         return this;
     }
@@ -315,6 +406,7 @@ public class ImageProcessor implements AutoCloseable {
 
     public ImageProcessor addWatermark(String text, double scale, int r, int g, int b, int fontFace) {
         Scalar color = new Scalar(b, g, r);
+        saveStep();
         DecorationFilters.addCenteredText(this.currentImage, text, scale, color, 2, fontFace);
         refreshAnalysis();
         return this;
@@ -327,6 +419,7 @@ public class ImageProcessor implements AutoCloseable {
     public ImageProcessor addSticker(String stickerPath, int x, int y, int width, int height, double opacity) {
         Mat sticker = Imgcodecs.imread(stickerPath, Imgcodecs.IMREAD_UNCHANGED);
         if (!sticker.empty()) {
+            saveStep();
             DecorationFilters.addSticker(this.currentImage, sticker, x, y, width, height, opacity);
         } else {
             System.err.println("Sticker bulunamadı: " + stickerPath);
@@ -340,30 +433,35 @@ public class ImageProcessor implements AutoCloseable {
     ///
 
     public ImageProcessor applyPixelate(int pixelSize) {
+        saveStep();
         ArtisticFilters.applyPixelate(this.currentImage, pixelSize);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor applySepia() {
+        saveStep();
         ArtisticFilters.applySepia(this.currentImage);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor applyVignette(double intensity) {
+        saveStep();
         ArtisticFilters.applyVignette(this.currentImage, intensity);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor applyBlur(double sigma) {
+        saveStep();
         ArtisticFilters.applyBlur(this.currentImage, sigma);
         refreshAnalysis();
         return this;
     }
 
     public ImageProcessor applyBlur_forStream(double sigma, boolean highQuality) {
+        saveStep();
         ArtisticFilters.applyBlur_forStream(this.currentImage, sigma, highQuality);
         refreshAnalysis();
         return this;
@@ -374,8 +472,80 @@ public class ImageProcessor implements AutoCloseable {
     }
 
     public ImageProcessor applyMedianBlur(int kernelSize){
+        saveStep();
         ArtisticFilters.applyMedianBlur(this.currentImage, kernelSize);
         refreshAnalysis();
+        return this;
+    }
+
+    public ImageProcessor applyMotionBlur(int kernelSize, double angle){
+        saveStep();
+        ArtisticFilters.applyMotionBlur(this.currentImage, kernelSize, angle);
+        refreshAnalysis();
+        return this;
+    }
+
+    ///
+    /// >>> Model Tabanlı Efektler  (AI)
+    ///
+
+    public ImageProcessor addPortraitEffect(double blurSigma, int maskSoftness) {
+        if (maskFactory == null) return this;
+        saveStep();
+        Mat result = ApplierMaskEffect.applyPortraitEffect(
+                this.currentImage,
+                this.maskFactory,
+                blurSigma,
+                maskSoftness
+        );
+        swapImage(result);
+        return this;
+    }
+
+    public ImageProcessor addMotionBlur(int intensity, double angle, int maskSoftness) {
+        if (maskFactory == null) return this;
+        saveStep();
+        Mat result = ApplierMaskEffect.applyMotionBlurEffect(
+                this.currentImage,
+                this.maskFactory,
+                intensity,
+                angle,
+                maskSoftness
+        );
+        swapImage(result);
+        return this;
+    }
+
+    public ImageProcessor addColorSplash(int maskSoftness) {
+        if (this.maskFactory == null) {
+            System.err.println("MaskFactory yüklü değil!");
+            return this;
+        }
+        saveStep();
+        // 1. Önce maskeyi istenen yumuşaklıkta üret
+        Mask mask = this.maskFactory.createPersonMask(this.currentImage, maskSoftness);
+
+        // 2. Yeni imzalı metodu çağır
+        Mat result = ApplierMaskEffect.applyColorSplash(this.currentImage, mask);
+
+        // 3. Senin yazdığın güvenli bellek yönetimi metoduyla resmi değiştir
+        swapImage(result);
+
+        return this;
+    }
+
+    public ImageProcessor changeBackground(Mat newBackground, int maskSoftness) {
+        if (maskFactory == null || newBackground.empty()) return this;
+
+        // Arka planı mevcut resim boyutuna getir
+        Mat resizedBg = new Mat();
+        Imgproc.resize(newBackground, resizedBg, this.currentImage.size());
+        saveStep();
+        Mask mask = this.maskFactory.createPersonMask(this.currentImage, maskSoftness);
+        Mat result = ApplierMaskEffect.applyBackgroundReplacement(this.currentImage, resizedBg, mask);
+
+        resizedBg.release();
+        swapImage(result);
         return this;
     }
 
@@ -383,16 +553,50 @@ public class ImageProcessor implements AutoCloseable {
     /// >>> Adaptif & Atmosferik Filtreler
     ///
 
-    public ImageProcessor applyCandleEffect() {
+    public ImageProcessor applyCandleEffect(double intensity) {
         Mat destination = new Mat();
-        this.adaptiveFilters.applyCandleEffect(this.currentImage, destination);
+        saveStep();
+        this.adaptiveFilters.applyCandleEffect(this.currentImage, destination, intensity);
         swapImage(destination);
         return this;
     }
 
     public ImageProcessor applyAtmosphereFilter(double intensity) {
         Mat destination = new Mat();
+        saveStep();
         this.adaptiveFilters.applyAtmosphereFilter(this.currentImage, destination, intensity);
+        swapImage(destination);
+        return this;
+    }
+
+    public ImageProcessor applyMidnightEffect(double intensity) {
+        Mat destination = new Mat();
+        saveStep();
+        this.adaptiveFilters.applyMidnightEffect(this.currentImage, destination, intensity);
+        swapImage(destination);
+        return this;
+    }
+
+    public ImageProcessor applyGoldenHour(double intensity) {
+        Mat destination = new Mat();
+        saveStep();
+        this.adaptiveFilters.applyGoldenHour(this.currentImage, destination, intensity);
+        swapImage(destination);
+        return this;
+    }
+
+    public ImageProcessor applyDramaticBW(double intensity) {
+        Mat destination = new Mat();
+        saveStep();
+        this.adaptiveFilters.applyDramaticBW(this.currentImage, destination, intensity);
+        swapImage(destination);
+        return this;
+    }
+
+    public ImageProcessor applyRetroSepia(double intensity) {
+        Mat destination = new Mat();
+        saveStep();
+        this.adaptiveFilters.applyRetroSepia(this.currentImage, destination, intensity);
         swapImage(destination);
         return this;
     }
@@ -417,6 +621,7 @@ public class ImageProcessor implements AutoCloseable {
 
             // Bulunan rengi mevcut resme uygula
             Mat destination = new Mat();
+            saveStep();
             adaptiveFilters.applyCustomColorFilter(this.currentImage, destination, moodColor, intensity);
 
             // Sonucu kaydet
@@ -443,4 +648,6 @@ public class ImageProcessor implements AutoCloseable {
     public byte[] process() {
         return ImageUtils.matToBytes(this.currentImage);
     }
+
+
 }

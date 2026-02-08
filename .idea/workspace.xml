@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="91e26cca-5e9f-4bd9-8458-407fecfd3ce8" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/photoeditor/MaskProcessors/ApplierMaskEffect.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/photoeditor/MaskProcessors/MaskRefiner.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/photoeditor/MaskProcessors/SmartMaskFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/model_raw.onnx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/jmh/java/photoeditor/ImageProcessorBenchmark.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/jmh/java/photoeditor/ImageProcessorBenchmark.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/MaskProcessors/Mask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/MaskProcessors/Mask.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/core/ImageProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/core/ImageProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/filters/AdaptiveFilters.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/filters/AdaptiveFilters.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/filters/ArtisticFilters.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/filters/ArtisticFilters.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/filters/BasicFilters.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/filters/BasicFilters.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/photoeditor/filters/ToneAdjustment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/photoeditor/filters/ToneAdjustment.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="PhotoEditor" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="PhotoEditor" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="PhotoEditor" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="392fCGlohkHlDemxnRJUImWCibi" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.PhotoEditor [:photoeditor.Main.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.PhotoEditor [clean].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Can\Documents\Belgelerim\PhotoEditorAPI\PhotoEditor\src\main\resources" />
+      <recent name="C:\Users\Can\Documents\Belgelerim\PhotoEditorAPI\PhotoEditor\src\test\resources" />
+      <recent name="C:\Users\Can\Documents\Belgelerim\PhotoEditorAPI\PhotoEditor" />
+      <recent name="C:\Users\Can\Documents\Belgelerim\PhotoEditorAPI\PhotoEditor\src" />
+      <recent name="C:\Users\Can\Documents\Belgelerim\PhotoEditorAPI\PhotoEditor\src\main" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Application.Main">
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="photoeditor.Main" />
+      <module name="PhotoEditor.main" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="photoeditor.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PhotoEditor [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="clean" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.PhotoEditor [clean]" />
+        <item itemvalue="Application.Main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="91e26cca-5e9f-4bd9-8458-407fecfd3ce8" name="Changes" comment="" />
+      <created>1769898958078</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1769898958078</updated>
+    </task>
+    <servers />
+  </component>
+</project>
